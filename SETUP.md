@@ -1,3 +1,5 @@
+> **Aktualisierung – Oktober 2026:** FAMILY HUB ist bereits mit Supabase verbunden. Für die gewählte Variante mit **einem gemeinsamen Login und sechs Familienprofilen** sind keine fünf weiteren Auth-Benutzer nötig. Die sechs Profile sind in der Datenbank angelegt. Namen werden direkt in der App im Bereich **Familie** bearbeitet. Die nachstehenden Schritte zu sechs getrennten Konten beschreiben nur das ursprüngliche Konzept und sind derzeit nicht erforderlich.
+
 # FAMILY HUB einrichten – Schritt für Schritt
 
 ## 1. GitHub Pages aktivieren
