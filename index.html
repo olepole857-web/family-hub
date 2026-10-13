@@ -11,7 +11,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
   <link rel="apple-touch-icon" href="icons/icon.svg" />
-  <link rel="stylesheet" href="styles.css?v=3" />
+  <link rel="stylesheet" href="styles.css?v=4" />
   <title>FAMILY HUB · Familienkalender</title>
 </head>
 <body>
@@ -44,6 +44,7 @@
       <div class="form-row"><div><label for="event-date">Datum</label><input id="event-date" name="event_date" type="date" required /></div><div><label for="event-time">Uhrzeit</label><input id="event-time" name="event_time" type="time" /></div></div>
       <label class="checkline"><input id="event-allday" name="all_day" type="checkbox" /><span>Ganztägig</span></label>
       <label for="event-details">Details (optional)</label><textarea id="event-details" name="details" rows="3" maxlength="1000" placeholder="Ort, weitere Informationen ..."></textarea>
+      <p id="event-author-label" class="author-label">Wird eingetragen von: Profil</p>
       <p class="form-error" id="event-error" role="alert"></p>
       <div class="form-actions"><button class="danger-button" id="delete-event" type="button" hidden>Löschen</button><button class="primary-button" type="submit">Termin speichern</button></div>
     </form>
@@ -54,6 +55,7 @@
       <div class="dialog-head"><h2 id="note-dialog-title">Notiz hinzufügen</h2><button class="close-button" type="button" data-close-dialog="note-dialog" aria-label="Schließen">×</button></div>
       <input type="hidden" name="id" />
       <label for="note-body">Notiz / Merkzettel</label><textarea id="note-body" name="body" maxlength="2000" required rows="4" placeholder="Was muss noch erledigt werden?"></textarea>
+      <p id="note-author-label" class="author-label">Wird eingetragen von: Profil</p>
       <p class="form-error" id="note-error" role="alert"></p>
       <div class="form-actions"><button class="danger-button" type="button" id="delete-note" hidden>Löschen</button><button class="primary-button" type="submit">Speichern</button></div>
     </form>
@@ -66,7 +68,16 @@
   <dialog id="menu-dialog" class="sheet small-sheet">
     <div class="dialog-body"><div class="dialog-head"><h2>FAMILY HUB</h2><button class="close-button" type="button" data-close-dialog="menu-dialog" aria-label="Schließen">×</button></div>
       <p class="muted" id="account-info">Dein Familienkalender</p>
-      <div class="stacked-buttons"><button id="menu-today" class="secondary-button">Heute anzeigen</button><button id="menu-help" class="secondary-button">Einrichtung & Hilfe</button><button id="logout-button" class="danger-button" hidden>Abmelden</button></div>
+      <div class="stacked-buttons"><button id="menu-today" class="secondary-button">Heute anzeigen</button><button id="menu-switch-profile" class="secondary-button" hidden>Profil wechseln</button><button id="menu-help" class="secondary-button">Einrichtung & Hilfe</button><button id="logout-button" class="danger-button" hidden>Abmelden</button></div>
+    </div>
+  </dialog>
+
+  <dialog id="profile-dialog" class="sheet small-sheet" aria-labelledby="profile-dialog-heading">
+    <div class="dialog-body">
+      <div class="dialog-head"><h2 id="profile-dialog-heading">Wer nutzt FAMILY HUB?</h2></div>
+      <p class="muted">Wähle dein Familienprofil. Wir merken uns die Auswahl auf diesem Gerät und ordnen neue Termine automatisch zu.</p>
+      <div id="profile-options" class="profile-options"></div>
+      <p class="helper">Namen ändern: unten „Familie“ auswählen, dann auf ✎ tippen. Du kannst dein Profil jederzeit wechseln.</p>
     </div>
   </dialog>
 
@@ -83,6 +94,6 @@
 
   <script src="supabase-config.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-  <script defer src="app.js?v=3"></script>
+  <script defer src="app.js?v=4"></script>
 </body>
 </html>
