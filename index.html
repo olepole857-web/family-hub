@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#c8edcc" />
+  <meta name="description" content="FAMILY HUB – euer gemeinsamer Familienkalender mit breiten Tageskacheln." />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="FAMILY HUB" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="stylesheet" href="styles.css" />
+  <title>FAMILY HUB · Familienkalender</title>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <button class="icon-button" id="menu-button" aria-label="Menü öffnen" title="Menü"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" /></svg></button>
+      <button id="month-picker-button" class="month-heading" title="Monat auswählen"><span id="month-title">Oktober 2026</span><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg></button>
+      <div class="top-actions">
+        <button class="icon-button" id="today-button" title="Zu heute springen" aria-label="Zu heute springen"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/><circle cx="12" cy="15" r="2"/></svg></button>
+        <button class="icon-button" id="more-button" aria-label="Weitere Optionen" title="Weitere Optionen"><svg viewBox="0 0 24 24" class="filled"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg></button>
+      </div>
+    </header>
+
+    <div class="statusbar" id="statusbar" role="status"></div>
+    <main class="main" id="main-content" tabindex="-1"></main>
+    <button class="fab" id="add-button" title="Termin hinzufügen" aria-label="Termin hinzufügen"><svg viewBox="0 0 24 24"><path d="M12 4v16M4 12h16" /></svg></button>
+    <nav class="bottom-nav" aria-label="Hauptnavigation">
+      <button class="nav-item" data-page="home" type="button"><span class="nav-symbol"><svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z" /></svg></span><span>Home</span></button>
+      <button class="nav-item selected" data-page="calendar" type="button"><span class="nav-symbol"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg></span><span>Kalender</span></button>
+      <button class="nav-item" data-page="family" type="button"><span class="nav-symbol"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2H3z"/><path d="M17 5a3 3 0 0 1 0 6M18 14a5 5 0 0 1 3 5v1h-4"/></svg></span><span>Familie</span></button>
+      <button class="nav-item" data-page="notes" type="button"><span class="nav-symbol"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V2h6v2M9 10h6M9 14h6M9 18h4"/></svg></span><span>Notizen</span></button>
+    </nav>
+  </div>
+
+  <dialog id="event-dialog" class="sheet">
+    <form id="event-form" class="dialog-body">
+      <div class="dialog-head"><h2 id="event-dialog-title">Termin hinzufügen</h2><button class="close-button" type="button" data-close-dialog="event-dialog" aria-label="Schließen">×</button></div>
+      <input type="hidden" name="id" />
+      <label for="event-title">Termin</label><input id="event-title" name="title" maxlength="120" required placeholder="z. B. Familienessen" />
+      <div class="form-row"><div><label for="event-date">Datum</label><input id="event-date" name="event_date" type="date" required /></div><div><label for="event-time">Uhrzeit</label><input id="event-time" name="event_time" type="time" /></div></div>
+      <label class="checkline"><input id="event-allday" name="all_day" type="checkbox" /><span>Ganztägig</span></label>
+      <label for="event-details">Details (optional)</label><textarea id="event-details" name="details" rows="3" maxlength="1000" placeholder="Ort, weitere Informationen ..."></textarea>
+      <p class="form-error" id="event-error" role="alert"></p>
+      <div class="form-actions"><button class="danger-button" id="delete-event" type="button" hidden>Löschen</button><button class="primary-button" type="submit">Termin speichern</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="note-dialog" class="sheet">
+    <form id="note-form" class="dialog-body">
+      <div class="dialog-head"><h2 id="note-dialog-title">Notiz hinzufügen</h2><button class="close-button" type="button" data-close-dialog="note-dialog" aria-label="Schließen">×</button></div>
+      <input type="hidden" name="id" />
+      <label for="note-body">Notiz / Merkzettel</label><textarea id="note-body" name="body" maxlength="2000" required rows="4" placeholder="Was muss noch erledigt werden?"></textarea>
+      <p class="form-error" id="note-error" role="alert"></p>
+      <div class="form-actions"><button class="danger-button" type="button" id="delete-note" hidden>Löschen</button><button class="primary-button" type="submit">Speichern</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="month-dialog" class="sheet small-sheet">
+    <form method="dialog" class="dialog-body"><div class="dialog-head"><h2>Monat auswählen</h2><button class="close-button" aria-label="Schließen">×</button></div><div class="form-row"><div><label for="jump-month">Monat</label><select id="jump-month"></select></div><div><label for="jump-year">Jahr</label><input id="jump-year" type="number" min="2000" max="2100" /></div></div><button class="primary-button" id="jump-button" type="button">Anzeigen</button></form>
+  </dialog>
+
+  <dialog id="menu-dialog" class="sheet small-sheet">
+    <div class="dialog-body"><div class="dialog-head"><h2>FAMILY HUB</h2><button class="close-button" type="button" data-close-dialog="menu-dialog" aria-label="Schließen">×</button></div>
+      <p class="muted" id="account-info">Dein Familienkalender</p>
+      <div class="stacked-buttons"><button id="menu-today" class="secondary-button">Heute anzeigen</button><button id="menu-help" class="secondary-button">Einrichtung & Hilfe</button><button id="logout-button" class="danger-button" hidden>Abmelden</button></div>
+    </div>
+  </dialog>
+
+  <dialog id="login-dialog" class="sheet login-dialog">
+    <form id="login-form" class="dialog-body">
+      <div class="dialog-head"><h2>Bei FAMILY HUB anmelden</h2></div>
+      <p class="muted">Melde dich mit dem Familienkonto an. Neue Zugänge werden vom Familien-Administrator eingerichtet.</p>
+      <label for="login-email">E-Mail</label><input id="login-email" type="email" autocomplete="email" required />
+      <label for="login-password">Passwort</label><input id="login-password" type="password" autocomplete="current-password" required minlength="6" />
+      <p id="login-error" class="form-error" role="alert"></p>
+      <button class="primary-button" type="submit">Anmelden</button>
+    </form>
+  </dialog>
+
+  <script src="supabase-config.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script defer src="app.js"></script>
+</body>
+</html>
