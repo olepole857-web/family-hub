@@ -7,7 +7,7 @@ Ein gemeinsamer Familienkalender mit **breiten horizontalen Tageskacheln**, einh
 ✅ Funktionsfähige Web-App mit Monatsnavigation, Terminen, bearbeiten/löschen, Notizen, Home und Familienübersicht.  
 ✅ Lokaler **Demo-Modus** sofort benutzbar (Daten bleiben nur im Browser auf diesem Gerät).  
 🔧 **Gemeinsame Nutzung** erfordert ein eigenes Supabase-Projekt, Benutzerkonten und die SQL-Einrichtung.  
-🔧 **GitHub Pages** muss im neu erstellten GitHub-Repository einmal aktiviert werden.
+🔧 **GitHub Pages** muss unter Settings → Pages einmal aktiviert werden. Der Quellcode liegt bereits vollständig im Repository.
 
 ## Schnellstart (Vorschau)
 
@@ -23,7 +23,7 @@ Danach `http://localhost:8000/` öffnen. Solange in `supabase-config.js` keine U
 
 Die vollständigen Einrichtungsschritte stehen in [SETUP.md](SETUP.md). Kurzfassung:
 
-1. Neues **öffentliches** GitHub-Repository `family-hub` erstellen und diese Dateien hineinladen. Der Quellcode ist öffentlich, **die privaten Kalenderdaten sind es nicht**. Niemals Passwörter oder einen `service_role`-Key committen.
+1. Das öffentliche GitHub-Repository `olepole857-web/family-hub` enthält bereits den App-Code. **Private Kalenderdaten sind darin nicht enthalten.** Niemals Passwörter oder einen `service_role`-Key committen.
 2. Auf GitHub unter **Settings → Pages → Build and deployment** die Quelle **Deploy from a branch**, `main` / `(root)` auswählen.
 3. Supabase-Projekt erstellen, `supabase-schema.sql` im SQL-Editor ausführen.
 4. Bis zu sechs Benutzer unter **Authentication → Users** anlegen, öffentliche Registrierung deaktivieren.
@@ -53,4 +53,4 @@ Die vollständigen Einrichtungsschritte stehen in [SETUP.md](SETUP.md). Kurzfass
 - `supabase-config.js` – öffentliche Projektdaten, zunächst leer
 - `supabase-schema.sql` – Tabellen, Berechtigungen, Zugriffsschutz und Realtime
 - `setup-family.sql` – Beispiel für manuelles Anlegen einer Familie
-- `sw.js`, `manifest.webmanifest`, `icons/` – Installation als Web-App
+- `sw.js`, `manifest.webmanifest`, `icons/icon.svg` – Installation als Web-App
