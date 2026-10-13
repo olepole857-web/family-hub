@@ -1,3 +1,9 @@
+## Aktueller Stand: gemeinsame Familienprofile
+
+FAMILY HUB verwendet jetzt **ein gemeinsames Login mit sechs frei benennbaren Profilen**. Beim ersten Start pro Gerät wird ein Profil gewählt und lokal gespeichert. Neue Termine und Notizen werden dem aktiven Profil zugeordnet. Profilnamen lassen sich unter **Familie** ändern. Bereits gespeicherte Termine bleiben erhalten. Die älteren Schritte zu sechs getrennten Konten weiter unten sind für diese Variante nicht erforderlich.
+
+---
+
 # FAMILY HUB 👨‍👩‍👧‍👦
 
 Ein gemeinsamer Familienkalender mit **breiten horizontalen Tageskacheln**, einheitlichem Design, Terminverwaltung und Familien-Merkzetteln. Funktioniert als Web-App auf iPhone, Android, Tablet und Computer.
