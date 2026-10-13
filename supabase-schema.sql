@@ -47,7 +47,12 @@ grant execute on function public.my_family_id() to authenticated;
 create or replace function public.limit_family_to_six()
 returns trigger language plpgsql set search_path='' as $$
 begin
-  if tg_op='INSERT' or new.family_id is distinct from old.family_id then
+  if tg_op='INSERT' then
+    perform pg_advisory_xact_lock(hashtext(new.family_id::text));
+    if (select count(*) from public.family_members where family_id=new.family_id)>=6 then
+      raise exception 'Maximal 6 Familienmitglieder erlaubt';
+    end if;
+  elsif new.family_id is distinct from old.family_id then
     perform pg_advisory_xact_lock(hashtext(new.family_id::text));
     if (select count(*) from public.family_members where family_id=new.family_id)>=6 then
       raise exception 'Maximal 6 Familienmitglieder erlaubt';
