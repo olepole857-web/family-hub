@@ -1,0 +1,19 @@
+{
+  "name": "FAMILY HUB – Familienkalender",
+  "short_name": "FAMILY HUB",
+  "description": "Gemeinsamer Familienkalender für bis zu sechs Personen.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#eaebf6",
+  "theme_color": "#c8edcc",
+  "lang": "de",
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
