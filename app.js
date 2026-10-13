@@ -7,7 +7,7 @@ const cloud=Boolean(cfg.supabaseUrl&&cfg.supabasePublishableKey);
 const now=new Date();
 const monthNames=["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
 const dayNames=["So.","Mo.","Di.","Mi.","Do.","Fr.","Sa."];
-const st={page:"calendar",month:new Date(now.getFullYear(),now.getMonth(),1),events:[],notes:[],members:[],familyId:null,user:null,client:null,reloading:false,channel:null,busy:false};
+const st={page:"calendar",month:new Date(now.getFullYear(),now.getMonth(),1),events:[],notes:[],members:[],profiles:[],activeProfileId:null,familyId:null,user:null,client:null,reloading:false,channel:null,busy:false};
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const iso=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-");
 const dateFor=s=>{const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)};
@@ -19,6 +19,43 @@ const shortDate=s=>dateFor(s).toLocaleDateString("de-DE",{day:"numeric",month:"l
 function status(s,type=""){const el=$("statusbar");el.textContent=s;el.className="statusbar "+type}
 function localRead(key){try{const v=JSON.parse(localStorage.getItem(key));return Array.isArray(v)?v:null}catch{return null}}
 function saveLocal(){if(!cloud){localStorage.setItem("family-hub.events.v1",JSON.stringify(st.events));localStorage.setItem("family-hub.notes.v1",JSON.stringify(st.notes))}}
+
+const profileStorageKey=()=> "family-hub.selected-profile."+st.familyId;
+const activeProfile=()=>st.profiles.find(p=>p.id===st.activeProfileId)||null;
+const profileName=id=>st.profiles.find(p=>p.id===id)?.display_name||"";
+function chooseProfile(id){
+ if(!st.profiles.some(p=>p.id===id))return;
+ st.activeProfileId=id;
+ localStorage.setItem(profileStorageKey(),id);
+ if($("profile-dialog").open)$("profile-dialog").close();
+ render();
+}
+function showProfileChooser(){
+ if(!cloud||!st.familyId)return;
+ $("profile-options").innerHTML=st.profiles.map(p=>
+ '<button type="button" class="profile-choice'+(p.id===st.activeProfileId?' profile-selected':'')+'" data-profile-choice="'+esc(p.id)+'">'+
+ '<span class="avatar">'+esc(p.display_name.slice(0,1).toUpperCase())+'</span><span>'+esc(p.display_name)+'</span></button>').join("");
+ if(!$("profile-dialog").open)$("profile-dialog").showModal();
+}
+function ensureSelectedProfile(){
+ if(!cloud)return;
+ const saved=localStorage.getItem(profileStorageKey());
+ if(st.profiles.some(p=>p.id===saved))st.activeProfileId=saved;
+ else{st.activeProfileId=null;showProfileChooser();}
+}
+async function renameProfile(id){
+ const p=st.profiles.find(x=>x.id===id);
+ if(!p)return;
+ const entered=prompt("Name für dieses Familienprofil:",p.display_name);
+ if(entered===null)return;
+ const name=entered.trim();
+ if(!name||name.length>70){status("Bitte einen Namen mit 1 bis 70 Zeichen eingeben.","error");return;}
+ try{
+ const {error}=await st.client.from("family_profiles").update({display_name:name}).eq("id",id).eq("family_id",st.familyId);
+ if(error)throw error;
+ await reload(true);status("Profil wurde umbenannt.");
+ }catch(e){status("Umbenennen fehlgeschlagen: "+(e.message||e),"error");}
+}
 function demo(){
 st.events=localRead("family-hub.events.v1")||[
 {id:uuid(),event_date:iso(now),event_time:"10:30",all_day:false,title:"Arzt",details:""},
@@ -35,7 +72,7 @@ function hideLogin(){if($("login-dialog").open)$("login-dialog").close()}
 async function initCloud(){
 if(!window.supabase?.createClient){status("Supabase-Bibliothek konnte nicht geladen werden. Bitte Verbindung prüfen.","error");return}
 try{st.client=window.supabase.createClient(cfg.supabaseUrl,cfg.supabasePublishableKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
-st.client.auth.onAuthStateChange((event)=>{if(event==="SIGNED_OUT"){if(st.channel){st.client.removeChannel(st.channel);st.channel=null}st.familyId=null;st.events=[];st.notes=[];st.members=[];status("Bitte anmelden.");showLogin()}});
+st.client.auth.onAuthStateChange((event)=>{if(event==="SIGNED_OUT"){if(st.channel){st.client.removeChannel(st.channel);st.channel=null}st.familyId=null;st.events=[];st.notes=[];st.members=[];st.profiles=[];st.activeProfileId=null;if($("profile-dialog").open)$("profile-dialog").close();status("Bitte anmelden.");showLogin()}});
 const {data,error}=await st.client.auth.getSession();if(error)throw error;
 if(data.session){st.user=data.session.user;await reload()}else showLogin();
 window.addEventListener("focus",()=>{if(st.user)reload(true)});
@@ -48,17 +85,18 @@ if(st.reloading||!st.user)return;st.reloading=true;
 try{
 const {data:member,error:memberError}=await st.client.from("family_members").select("family_id").eq("user_id",st.user.id).maybeSingle();
 if(memberError)throw memberError;
-if(!member){st.familyId=null;st.events=[];st.notes=[];st.members=[];status("Konto ist noch keiner Familie zugeordnet. Bitte in Supabase freischalten.","error");hideLogin();render();return}
+if(!member){st.familyId=null;st.events=[];st.notes=[];st.members=[];st.profiles=[];st.activeProfileId=null;status("Konto ist noch keiner Familie zugeordnet. Bitte in Supabase freischalten.","error");hideLogin();render();return}
 st.familyId=member.family_id;
 const r=await Promise.all([
-st.client.from("events").select("id,title,event_date,event_time,all_day,details,created_by").eq("family_id",st.familyId),
-st.client.from("notes").select("id,body,done,created_by").eq("family_id",st.familyId),
-st.client.from("family_members").select("user_id,display_name").eq("family_id",st.familyId)]);
+st.client.from("events").select("id,title,event_date,event_time,all_day,details,created_by,profile_id").eq("family_id",st.familyId),
+st.client.from("notes").select("id,body,done,created_by,profile_id").eq("family_id",st.familyId),
+st.client.from("family_members").select("user_id,display_name").eq("family_id",st.familyId),
+st.client.from("family_profiles").select("id,slot_number,display_name").eq("family_id",st.familyId).order("slot_number")]);
 for(const x of r)if(x.error)throw x.error;
-st.events=r[0].data||[];st.notes=r[1].data||[];st.members=r[2].data||[];
+st.events=r[0].data||[];st.notes=r[1].data||[];st.members=r[2].data||[];st.profiles=r[3].data||[];
 hideLogin();if(!quiet)status("Gemeinsamer Kalender verbunden – alle Familienmitglieder sehen die Änderungen.","demo");
 if(!st.channel){st.channel=st.client.channel("family-hub-"+st.familyId).on("postgres_changes",{event:"*",schema:"public",table:"events",filter:"family_id=eq."+st.familyId},()=>reload(true)).on("postgres_changes",{event:"*",schema:"public",table:"notes",filter:"family_id=eq."+st.familyId},()=>reload(true)).subscribe()}
-render();
+render();ensureSelectedProfile();
 }catch(e){status("Laden fehlgeschlagen: "+(e.message||e),"error");if(!quiet)render()}finally{st.reloading=false}
 }
 function iconFor(title){const t=title.toLowerCase();if(/arzt|klinik|zahnarzt/.test(t))return "♧";if(/einkauf/.test(t))return "🛒";if(/geburtstag|feier/.test(t))return "🎁";if(/schule|uni/.test(t))return "🎓";if(/fußball|sport/.test(t))return "⚽";if(/essen/.test(t))return "🍴";if(/müll/.test(t))return "♻";if(/flug|urlaub/.test(t))return "✈";return "•"}
