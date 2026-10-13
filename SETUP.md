@@ -1,14 +1,12 @@
 # FAMILY HUB einrichten – Schritt für Schritt
 
-## 1. GitHub-Repository anlegen
+## 1. GitHub Pages aktivieren
 
-1. Melde dich bei GitHub an und öffne <https://github.com/new>.
-2. **Repository name:** `family-hub`.
-3. Wähle **Public** für kostenloses GitHub Pages im Free-Tarif. Wichtig: Das Repository enthält nur App-Code, keine Familien-Termine, Logins oder privaten Schlüssel.
-4. „Create repository“.
-5. Dateien aus dem ZIP **einschließlich der Unterordner** über **Add file → Upload files** hochladen und committen. Alternativ die Dateien durch den verbundenen GitHub-Assistenten einpflegen lassen.
-6. **Settings → Pages → Build and deployment → Source: Deploy from a branch**, Branch `main`, Folder `/(root)` → Save.
-7. Deine Seite bekommt üblicherweise eine Adresse wie `https://DEINNAME.github.io/family-hub/`. Es kann ein paar Minuten dauern.
+1. Das Repository [family-hub](https://github.com/olepole857-web/family-hub) ist bereits eingerichtet und enthält alle App-Dateien.
+2. Öffne [Settings → Pages](https://github.com/olepole857-web/family-hub/settings/pages) im Repository.
+3. Unter **Build and deployment** wähle **Deploy from a branch**.
+4. Wähle **main**, dann **/(root)** und bestätige **Save**.
+5. Warte ein paar Minuten; die öffentliche App-Adresse lautet dann voraussichtlich <https://olepole857-web.github.io/family-hub/>.
 
 **Hinweis:** GitHub Pages ist öffentlich erreichbar. Der geschützte Login und die RLS-Regeln verhindern, dass Fremde die privaten Termine sehen. GitHub Pages selbst bietet keine private Zugangsbarriere.
 
