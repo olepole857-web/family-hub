@@ -66,6 +66,79 @@ function ensureSelectedProfile(){
  if(st.profiles.some(p=>p.id===saved))st.activeProfileId=saved;
  else{st.activeProfileId=null;showProfileChooser();}
 }
+
+function beginAvatarUpload(profileId){
+ if(st.avatarBusy)return;
+ const p=st.profiles.find(x=>x.id===profileId);
+ if(!p||!cloud)return;
+ st.avatarTargetId=profileId;
+ const input=$("avatar-file-input");
+ input.value="";
+ input.click();
+}
+async function jpegSquare(file){
+ if(!file||!file.type.startsWith("image/"))throw Error("Bitte eine Bilddatei auswählen.");
+ if(file.size>15*1024*1024)throw Error("Das ausgewählte Bild ist größer als 15 MB.");
+ const obj=URL.createObjectURL(file);
+ try{
+  const img=new Image();
+  await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(Error("Foto konnte nicht gelesen werden. Bitte JPG, PNG oder ein anderes unterstütztes Foto wählen."));img.src=obj;});
+  if(!img.naturalWidth||!img.naturalHeight)throw Error("Ungültiges Bild.");
+  const side=Math.min(img.naturalWidth,img.naturalHeight);
+  const canvas=document.createElement("canvas");canvas.width=320;canvas.height=320;
+  const ctx=canvas.getContext("2d");
+  if(!ctx)throw Error("Bildbearbeitung wird auf diesem Gerät nicht unterstützt.");
+  ctx.fillStyle="#ffffff";ctx.fillRect(0,0,320,320);
+  ctx.drawImage(img,(img.naturalWidth-side)/2,(img.naturalHeight-side)/2,side,side,0,0,320,320);
+  const blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/jpeg",0.84));
+  if(!blob)throw Error("Foto konnte nicht verarbeitet werden.");
+  if(blob.size>2*1024*1024)throw Error("Das Foto ist nach der Verarbeitung noch zu groß.");
+  return blob;
+ }finally{URL.revokeObjectURL(obj);}
+}
+async function uploadAvatar(profileId,file){
+ if(st.avatarBusy)return;
+ const p=st.profiles.find(x=>x.id===profileId);
+ if(!p)return;
+ st.avatarBusy=true;status("Profilfoto wird verarbeitet und hochgeladen …");
+ const oldPath=p.avatar_path;
+ let newPath=null;
+ try{
+  const jpeg=await jpegSquare(file);
+  newPath=st.familyId+"/"+p.id+"/"+crypto.randomUUID()+".jpg";
+  const storage=st.client.storage.from(photoBucket);
+  const {error:uploadError}=await storage.upload(newPath,jpeg,{contentType:"image/jpeg",cacheControl:"3600",upsert:false});
+  if(uploadError)throw uploadError;
+  const {data, error:saveError}=await st.client.from("family_profiles").update({avatar_path:newPath}).eq("id",p.id).eq("family_id",st.familyId).select("id").single();
+  if(saveError||!data)throw saveError||Error("Profil wurde nicht gefunden.");
+  delete st.avatarCache[newPath];
+  if(oldPath){delete st.avatarCache[oldPath];const {error:deleteError}=await storage.remove([oldPath]);if(deleteError)console.warn("Altes Profilfoto konnte nicht gelöscht werden",deleteError);}
+  await reload(true);
+  status("Profilfoto für "+p.display_name+" gespeichert.");
+  newPath=null;
+ }catch(e){
+  if(newPath)await st.client.storage.from(photoBucket).remove([newPath]).catch(()=>{});
+  status("Profilfoto konnte nicht gespeichert werden: "+(e.message||e),"error");
+ }finally{st.avatarBusy=false;st.avatarTargetId=null;}
+}
+async function removeAvatar(profileId){
+ if(st.avatarBusy)return;
+ const p=st.profiles.find(x=>x.id===profileId);
+ if(!p?.avatar_path)return;
+ if(!confirm('Profilfoto von "'+p.display_name+'" entfernen?'))return;
+ st.avatarBusy=true;
+ const oldPath=p.avatar_path;
+ try{
+  const {data,error}=await st.client.from("family_profiles").update({avatar_path:null}).eq("id",p.id).eq("family_id",st.familyId).select("id").single();
+  if(error||!data)throw error||Error("Profil wurde nicht gefunden.");
+  delete st.avatarCache[oldPath];
+  const {error:removeError}=await st.client.storage.from(photoBucket).remove([oldPath]);
+  if(removeError)console.warn("Altes Bildobjekt konnte nicht gelöscht werden",removeError);
+  await reload(true);
+  status("Profilfoto entfernt.");
+ }catch(e){status("Profilfoto konnte nicht entfernt werden: "+(e.message||e),"error");}
+ finally{st.avatarBusy=false;}
+}
 async function renameProfile(id){
  const p=st.profiles.find(x=>x.id===id);
  if(!p)return;
