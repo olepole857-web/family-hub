@@ -46,3 +46,11 @@
 .recurrence-end small{color:#7b8198;font-size:12px}
 .series-notice{font-size:12px;line-height:1.45;margin:4px 0 0;color:#6c5e31;background:#fff6dc;padding:9px 10px;border-radius:8px}
 .recurrence-marker{display:inline-block;font-size:12px;color:#6d5f85;background:#f1eef8;padding:3px 8px;border-radius:30px;margin-top:6px}
+
+
+/* Inclusive date ranges for holidays, trips and other multi-day appointments */
+.date-range-settings{display:flex;flex-direction:column;gap:7px;margin-top:8px;margin-bottom:10px;padding:13px;border:1px solid #dfe8e6;border-radius:14px;background:#f5faf7}
+.date-range-settings[hidden]{display:none!important}
+.date-range-settings label{font-weight:650}
+.date-range-settings small{color:#687c73;font-size:12px;line-height:1.5}
+.multi-day-marker{background:#e7f2ec;color:#356e50;margin-left:3px}
