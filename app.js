@@ -198,8 +198,13 @@ render();ensureSelectedProfile();
 }
 function iconFor(title){const t=title.toLowerCase();if(/arzt|klinik|zahnarzt/.test(t))return "♧";if(/einkauf/.test(t))return "🛒";if(/geburtstag|feier/.test(t))return "🎁";if(/schule|uni/.test(t))return "🎓";if(/fußball|sport/.test(t))return "⚽";if(/essen/.test(t))return "🍴";if(/müll/.test(t))return "♻";if(/flug|urlaub/.test(t))return "✈";return "•"}
 function eventButton(e){
- const author=profileName(e.profile_id);
- return '<button class="event-item" type="button" data-event-id="'+esc(e.id)+'"><span class="event-icon" aria-hidden="true">'+iconFor(e.title)+'</span><span class="event-info"><span class="event-title">'+esc(e.title)+'</span><br><span class="event-time">'+esc(time(e))+'</span>'+(author?'<br><span class="event-author">Eingetragen von '+esc(author)+'</span>':'')+'</span></button>';
+ const profile=st.profiles.find(p=>p.id===e.profile_id);
+ const author=profile?.display_name||"";
+ return '<button class="event-item" type="button" data-event-id="'+esc(e.id)+'">'+
+ '<span class="event-icon" aria-hidden="true">'+iconFor(e.title)+'</span>'+
+ '<span class="event-info"><span class="event-title">'+esc(e.title)+'</span><br><span class="event-time">'+esc(time(e))+'</span>'+
+ (author?'<span class="event-author-with-avatar">'+profileAvatar(profile,"author-avatar")+'<span class="event-author">Eingetragen von '+esc(author)+'</span></span>':'')+
+ '</span></button>';
 }
 function week(d){const x=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));x.setUTCDate(x.getUTCDate()+4-(x.getUTCDay()||7));const y=x.getUTCFullYear();return [Math.ceil(((x-new Date(Date.UTC(y,0,1)))/86400000+1)/7),y]}
 function calendar(){const y=st.month.getFullYear(),m=st.month.getMonth(),last=new Date(y,m+1,0).getDate();let h='<div class="month-navigation"><button class="text-button" data-month-shift="-1">← Vorheriger Monat</button><button class="text-button" data-month-shift="1">Nächster Monat →</button></div>';const events=sorted();for(let d=1;d<=last;d++){const date=new Date(y,m,d),key=iso(date);if(d===1||date.getDay()===1){const [w,yr]=week(date);h+='<div class="week-title"><h2>KW '+w+', '+yr+'</h2><small>Termine im Überblick</small></div>'}h+='<div class="calendar-row"><div class="date-label '+(key===iso(now)?"today":"")+'"><span class="weekday">'+dayNames[date.getDay()]+'</span><span class="day-number">'+d+'</span></div><div class="date-card">';const dayEvents=events.filter(e=>e.event_date===key);h+=dayEvents.map(eventButton).join("");h+='<button type="button" class="add-day'+(dayEvents.length?' has-events':'')+'" data-add-date="'+key+'" aria-label="Weiteren Termin am '+d+'. '+monthNames[m]+' hinzufügen">'+(dayEvents.length?'+ Weiteren Termin hinzufügen':'+ Termin hinzufügen')+'</button>';h+='</div></div>'}return h}
@@ -209,10 +214,19 @@ function family(){
  const current=activeProfile();
  return '<h1 class="page-title">Unsere Familie</h1>'+
  '<p class="lead">Ein Login für alle. Jede Person wählt auf ihrem Gerät einmal ihr Profil.</p>'+
- '<div class="panel"><div class="current-profile"><span class="avatar">'+esc((current?.display_name||'?').slice(0,1).toUpperCase())+'</span><div><small class="muted">Auf diesem Gerät ausgewählt</small><br><b>'+esc(current?.display_name||'Noch kein Profil')+'</b></div></div><button type="button" class="secondary-button full-width" data-switch-profile="1">Profil wechseln</button></div>'+
+ '<div class="panel"><div class="current-profile">'+profileAvatar(current,"active-profile-avatar")+
+ '<div><small class="muted">Auf diesem Gerät ausgewählt</small><br><b>'+esc(current?.display_name||'Noch kein Profil')+'</b></div></div>'+
+ '<button type="button" class="secondary-button full-width" data-switch-profile="1">Profil wechseln</button></div>'+
  '<div class="panel"><div class="section-heading" style="margin-top:0"><h2>Familienprofile</h2><small>'+st.profiles.length+' von 6</small></div>'+
- st.profiles.map(p=>'<div class="person-row"><span class="avatar">'+esc(p.display_name.slice(0,1).toUpperCase())+'</span><div class="person-label"><b>'+esc(p.display_name)+'</b><span>'+(current?.id===p.id?'Auf diesem Gerät aktiv':'Profil '+p.slot_number)+'</span></div><button type="button" class="outlined-button" data-rename-profile="'+esc(p.id)+'" aria-label="'+esc(p.display_name)+' umbenennen">✎</button></div>').join('')+
- '</div><div class="panel guide"><b>Gut zu wissen</b><p class="muted">Das ausgewählte Profil wird auf dem jeweiligen Gerät gespeichert. Mit dem gemeinsamen Login kann jeder das Profil wechseln. Die Zuordnung ist eine Angabe und keine sichere Identitätsprüfung.</p></div>';
+ st.profiles.map(p=>'<div class="person-row family-profile-row">'+
+ profileAvatar(p,"family-profile-avatar")+
+ '<div class="person-label"><b>'+esc(p.display_name)+'</b><span>'+(current?.id===p.id?'Auf diesem Gerät aktiv':'Profil '+p.slot_number)+'</span></div>'+
+ '<div class="profile-actions">'+
+ '<button type="button" class="secondary-button profile-photo-button" data-upload-avatar="'+esc(p.id)+'" aria-label="Foto von '+esc(p.display_name)+' '+(p.avatar_path?'ändern':'hochladen')+'">📷 '+(p.avatar_path?'Ändern':'Foto')+'</button>'+
+ (p.avatar_path?'<button type="button" class="photo-remove-button" data-remove-avatar="'+esc(p.id)+'" aria-label="Profilfoto von '+esc(p.display_name)+' entfernen" title="Foto entfernen">✕</button>':'')+
+ '<button type="button" class="outlined-button rename-profile-button" data-rename-profile="'+esc(p.id)+'" aria-label="'+esc(p.display_name)+' umbenennen" title="Name ändern">✎</button>'+
+ '</div></div>').join('')+
+ '</div><div class="panel guide"><b>Profilfotos</b><p class="muted">Tippe auf „Foto“, um ein echtes Bild auszuwählen. Das Bild wird quadratisch zugeschnitten und geschützt für eure Familie gespeichert. Mit „Ändern“ kannst du es ersetzen.</p><b>Gut zu wissen</b><p class="muted">Das ausgewählte Profil wird auf diesem Gerät gespeichert. Wer das gemeinsame Passwort kennt, kann jedes Profil wechseln und Fotos ändern.</p></div>';
 }
 function notes(){
  return '<h1 class="page-title">Familien-Merkzettel</h1><p class="lead">Aufgaben und Einkaufsnotizen für alle.</p>'+
