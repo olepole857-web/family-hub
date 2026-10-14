@@ -14,3 +14,23 @@
 .event-author,.note-author{display:block;font-size:12px;color:#79838d;margin-top:4px;font-weight:500}
 .author-label{font-size:13px;color:#47684f;background:#eaf5ec;padding:10px;border-radius:10px;margin:1px 0 0;line-height:1.45}
 @media(max-width:360px){.profile-choice{flex-direction:column;justify-content:center;text-align:center;gap:6px}}
+
+
+/* Private family photo avatars, with initial fallback */
+.profile-avatar{position:relative;display:inline-grid;place-items:center;overflow:hidden;width:42px;height:42px;min-width:42px;min-height:42px;flex:none;background:#e1f0e4;color:#367b55;isolation:isolate;border-radius:50%}
+.profile-avatar .avatar-initial{display:block;font-weight:800;z-index:0;line-height:1}
+.profile-avatar .avatar-photo{display:block;position:absolute;inset:0;width:100%;height:100%;border-radius:50%;object-fit:cover;background:#e1f0e4;z-index:1}
+.profile-avatar .avatar-photo[hidden]{display:none}
+.profile-choice .profile-avatar{width:44px;height:44px;min-width:44px;min-height:44px}
+.active-profile-avatar{width:56px;height:56px;min-width:56px;min-height:56px;font-size:21px}
+.family-profile-avatar{width:46px;height:46px;min-width:46px;min-height:46px}
+.event-author-with-avatar{display:flex;align-items:center;gap:6px;margin-top:5px}
+.author-avatar{width:22px;height:22px;min-width:22px;min-height:22px;font-size:10px}
+.event-author-with-avatar .event-author{display:inline;margin-top:0}
+.family-profile-row{gap:10px}
+.family-profile-row .person-label{min-width:0}
+.profile-actions{display:flex;align-items:center;justify-content:flex-end;gap:5px;flex:none}
+.profile-photo-button{font-size:12px;padding:7px 9px;min-height:38px;white-space:nowrap}
+.rename-profile-button{padding:7px 9px;min-height:38px}
+.photo-remove-button{background:#ffecf0;border:0;color:#9d2f50;border-radius:9px;min-width:32px;min-height:38px;font-weight:750}
+@media(max-width:430px){.family-profile-row{flex-wrap:wrap}.family-profile-row .person-label{flex:1 1 calc(100% - 65px)}.family-profile-row .profile-actions{width:100%;padding-left:54px;justify-content:flex-start}.profile-choice .profile-avatar{flex:none}}
