@@ -11,7 +11,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
   <link rel="apple-touch-icon" href="icons/icon.svg" />
-  <link rel="stylesheet" href="styles.css?v=4" />
+  <link rel="stylesheet" href="styles.css?v=5" />
   <title>FAMILY HUB · Familienkalender</title>
 </head>
 <body>
@@ -35,6 +35,8 @@
       <button class="nav-item" data-page="notes" type="button"><span class="nav-symbol"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V2h6v2M9 10h6M9 14h6M9 18h4"/></svg></span><span>Notizen</span></button>
     </nav>
   </div>
+
+  <input id="avatar-file-input" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,image/*" hidden aria-label="Profilfoto auswählen" />
 
   <dialog id="event-dialog" class="sheet">
     <form id="event-form" class="dialog-body">
@@ -94,6 +96,6 @@
 
   <script src="supabase-config.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-  <script defer src="app.js?v=4"></script>
+  <script defer src="app.js?v=5"></script>
 </body>
 </html>
