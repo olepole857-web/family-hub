@@ -36,3 +36,13 @@
 @media(max-width:430px){.family-profile-row{flex-wrap:wrap}.family-profile-row .person-label{flex:1 1 calc(100% - 65px)}.family-profile-row .profile-actions{width:100%;padding-left:54px;justify-content:flex-start}.profile-choice .profile-avatar{flex:none}}
 
 .note-author-with-avatar{display:flex;align-items:center;gap:6px;margin-top:7px}.note-author-with-avatar .note-author{display:inline;margin-top:0}
+
+
+/* Repeating family appointments */
+.recurrence-settings{display:flex;flex-direction:column;gap:8px;margin-top:3px;padding:13px;border:1px solid #e7e8f1;border-radius:14px;background:#f8f9fd}
+.recurrence-settings>label{margin-bottom:1px}
+.recurrence-end{display:flex;flex-direction:column;gap:7px;padding-top:7px}
+.recurrence-end[hidden],.series-notice[hidden]{display:none!important}
+.recurrence-end small{color:#7b8198;font-size:12px}
+.series-notice{font-size:12px;line-height:1.45;margin:4px 0 0;color:#6c5e31;background:#fff6dc;padding:9px 10px;border-radius:8px}
+.recurrence-marker{display:inline-block;font-size:12px;color:#6d5f85;background:#f1eef8;padding:3px 8px;border-radius:30px;margin-top:6px}
