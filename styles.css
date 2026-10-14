@@ -34,3 +34,5 @@
 .rename-profile-button{padding:7px 9px;min-height:38px}
 .photo-remove-button{background:#ffecf0;border:0;color:#9d2f50;border-radius:9px;min-width:32px;min-height:38px;font-weight:750}
 @media(max-width:430px){.family-profile-row{flex-wrap:wrap}.family-profile-row .person-label{flex:1 1 calc(100% - 65px)}.family-profile-row .profile-actions{width:100%;padding-left:54px;justify-content:flex-start}.profile-choice .profile-avatar{flex:none}}
+
+.note-author-with-avatar{display:flex;align-items:center;gap:6px;margin-top:7px}.note-author-with-avatar .note-author{display:inline;margin-top:0}
