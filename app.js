@@ -16,6 +16,32 @@ const uuid=()=>crypto.randomUUID();
 const time=e=>e.all_day||!e.event_time?"Ganztägig":String(e.event_time).slice(0,5)+" Uhr";
 const sorted=()=>[...st.events].sort((a,b)=>(a.event_date+" "+(a.all_day?"00:00":a.event_time||"99:99")).localeCompare(b.event_date+" "+(b.all_day?"00:00":b.event_time||"99:99")));
 const shortDate=s=>dateFor(s).toLocaleDateString("de-DE",{day:"numeric",month:"long",year:"numeric"});
+const recurrenceLabels={none:"Einmalig",daily:"Täglich",weekly:"Wöchentlich",monthly:"Monatlich",yearly:"Jährlich"};
+function occursOn(e,key){
+ const start=e.event_date,frequency=e.repeat_frequency||"none";
+ if(!start||key<start||(e.repeat_until&&key>e.repeat_until))return false;
+ if(frequency==="none")return key===start;
+ const origin=dateFor(start),target=dateFor(key);
+ if(frequency==="daily")return true;
+ if(frequency==="weekly"){
+  const delta=Math.round((Date.UTC(target.getFullYear(),target.getMonth(),target.getDate())-Date.UTC(origin.getFullYear(),origin.getMonth(),origin.getDate()))/86400000);
+  return delta%7===0;
+ }
+ if(frequency==="monthly")return target.getDate()===Math.min(origin.getDate(),new Date(target.getFullYear(),target.getMonth()+1,0).getDate());
+ if(frequency==="yearly")return target.getMonth()===origin.getMonth()&&target.getDate()===Math.min(origin.getDate(),new Date(target.getFullYear(),target.getMonth()+1,0).getDate());
+ return false;
+}
+function occurrencesBetween(first,last){
+ const start=dateFor(first),end=dateFor(last),hits=[];
+ for(let date=new Date(start);date<=end;date.setDate(date.getDate()+1)){
+   const key=iso(date);
+   for(const e of st.events){
+     if(occursOn(e,key))hits.push({...e,event_date:key,_occurrence_date:key});
+   }
+ }
+ return hits.sort((a,b)=>(a.event_date+" "+(a.all_day?"00:00":a.event_time||"99:99")).localeCompare(b.event_date+" "+(b.all_day?"00:00":b.event_time||"99:99")));
+}
+
 function status(s,type=""){const el=$("statusbar");el.textContent=s;el.className="statusbar "+type}
 function localRead(key){try{const v=JSON.parse(localStorage.getItem(key));return Array.isArray(v)?v:null}catch{return null}}
 function saveLocal(){if(!cloud){localStorage.setItem("family-hub.events.v1",JSON.stringify(st.events));localStorage.setItem("family-hub.notes.v1",JSON.stringify(st.notes))}}
@@ -202,13 +228,13 @@ function eventButton(e){
  const author=profile?.display_name||"";
  return '<button class="event-item" type="button" data-event-id="'+esc(e.id)+'">'+
  '<span class="event-icon" aria-hidden="true">'+iconFor(e.title)+'</span>'+
- '<span class="event-info"><span class="event-title">'+esc(e.title)+'</span><br><span class="event-time">'+esc(time(e))+'</span>'+
+ '<span class="event-info"><span class="event-title">'+esc(e.title)+'</span><br><span class="event-time">'+esc(time(e))+'</span>'+(e.repeat_frequency&&e.repeat_frequency!=="none"?'<span class="recurrence-marker" title="'+esc(recurrenceLabels[e.repeat_frequency])+'">↻ '+esc(recurrenceLabels[e.repeat_frequency])+'</span>':'')+
  (author?'<span class="event-author-with-avatar">'+profileAvatar(profile,"author-avatar")+'<span class="event-author">Eingetragen von '+esc(author)+'</span></span>':'')+
  '</span></button>';
 }
 function week(d){const x=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));x.setUTCDate(x.getUTCDate()+4-(x.getUTCDay()||7));const y=x.getUTCFullYear();return [Math.ceil(((x-new Date(Date.UTC(y,0,1)))/86400000+1)/7),y]}
-function calendar(){const y=st.month.getFullYear(),m=st.month.getMonth(),last=new Date(y,m+1,0).getDate();let h='<div class="month-navigation"><button class="text-button" data-month-shift="-1">← Vorheriger Monat</button><button class="text-button" data-month-shift="1">Nächster Monat →</button></div>';const events=sorted();for(let d=1;d<=last;d++){const date=new Date(y,m,d),key=iso(date);if(d===1||date.getDay()===1){const [w,yr]=week(date);h+='<div class="week-title"><h2>KW '+w+', '+yr+'</h2><small>Termine im Überblick</small></div>'}h+='<div class="calendar-row"><div class="date-label '+(key===iso(now)?"today":"")+'"><span class="weekday">'+dayNames[date.getDay()]+'</span><span class="day-number">'+d+'</span></div><div class="date-card">';const dayEvents=events.filter(e=>e.event_date===key);h+=dayEvents.map(eventButton).join("");h+='<button type="button" class="add-day'+(dayEvents.length?' has-events':'')+'" data-add-date="'+key+'" aria-label="Weiteren Termin am '+d+'. '+monthNames[m]+' hinzufügen">'+(dayEvents.length?'+ Weiteren Termin hinzufügen':'+ Termin hinzufügen')+'</button>';h+='</div></div>'}return h}
-function home(){const n=sorted().filter(e=>e.event_date>=iso(now)).slice(0,8);return '<div class="today-feature"><div><span class="pill">FAMILY HUB</span><h1 class="page-title" style="margin-top:13px">Hallo, Familie!</h1><p>'+now.toLocaleDateString("de-DE",{weekday:"long",day:"numeric",month:"long"})+'</p></div><button class="outlined-button" data-go="calendar">Kalender →</button></div><div class="card-grid"><div class="mini-stat"><b>'+st.events.filter(e=>e.event_date===iso(now)).length+'</b><span>Termine heute</span></div><div class="mini-stat"><b>'+(cloud?st.profiles.length:st.members.length)+'</b><span>Familienprofile</span></div></div><div class="section-heading"><h2>Nächste Termine</h2></div>'+(n.length?n.map(e=>'<div class="panel"><small class="muted">'+shortDate(e.event_date)+'</small>'+eventButton(e)+'</div>').join(""):'<div class="panel">Keine Termine geplant</div>')}
+function calendar(){const y=st.month.getFullYear(),m=st.month.getMonth(),last=new Date(y,m+1,0).getDate();let h='<div class="month-navigation"><button class="text-button" data-month-shift="-1">← Vorheriger Monat</button><button class="text-button" data-month-shift="1">Nächster Monat →</button></div>';const events=occurrencesBetween(iso(new Date(y,m,1)),iso(new Date(y,m,last)));for(let d=1;d<=last;d++){const date=new Date(y,m,d),key=iso(date);if(d===1||date.getDay()===1){const [w,yr]=week(date);h+='<div class="week-title"><h2>KW '+w+', '+yr+'</h2><small>Termine im Überblick</small></div>'}h+='<div class="calendar-row"><div class="date-label '+(key===iso(now)?"today":"")+'"><span class="weekday">'+dayNames[date.getDay()]+'</span><span class="day-number">'+d+'</span></div><div class="date-card">';const dayEvents=events.filter(e=>e.event_date===key);h+=dayEvents.map(eventButton).join("");h+='<button type="button" class="add-day'+(dayEvents.length?' has-events':'')+'" data-add-date="'+key+'" aria-label="Weiteren Termin am '+d+'. '+monthNames[m]+' hinzufügen">'+(dayEvents.length?'+ Weiteren Termin hinzufügen':'+ Termin hinzufügen')+'</button>';h+='</div></div>'}return h}
+function home(){const n=occurrencesBetween(iso(now),addDay(now,400)).slice(0,8);return '<div class="today-feature"><div><span class="pill">FAMILY HUB</span><h1 class="page-title" style="margin-top:13px">Hallo, Familie!</h1><p>'+now.toLocaleDateString("de-DE",{weekday:"long",day:"numeric",month:"long"})+'</p></div><button class="outlined-button" data-go="calendar">Kalender →</button></div><div class="card-grid"><div class="mini-stat"><b>'+st.events.filter(e=>occursOn(e,iso(now))).length+'</b><span>Termine heute</span></div><div class="mini-stat"><b>'+(cloud?st.profiles.length:st.members.length)+'</b><span>Familienprofile</span></div></div><div class="section-heading"><h2>Nächste Termine</h2></div>'+(n.length?n.map(e=>'<div class="panel"><small class="muted">'+shortDate(e.event_date)+'</small>'+eventButton(e)+'</div>').join(""):'<div class="panel">Keine Termine geplant</div>')}
 function family(){
  if(!cloud)return '<h1 class="page-title">Unsere Familie</h1><p>Familienprofile werden im gemeinsamen Kalender angezeigt.</p>';
  const current=activeProfile();
