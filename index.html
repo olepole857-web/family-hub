@@ -11,7 +11,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
   <link rel="apple-touch-icon" href="icons/icon.svg" />
-  <link rel="stylesheet" href="styles.css?v=5" />
+  <link rel="stylesheet" href="styles.css?v=6" />
   <title>FAMILY HUB · Familienkalender</title>
 </head>
 <body>
@@ -45,6 +45,22 @@
       <label for="event-title">Termin</label><input id="event-title" name="title" maxlength="120" required placeholder="z. B. Familienessen" />
       <div class="form-row"><div><label for="event-date">Datum</label><input id="event-date" name="event_date" type="date" required /></div><div><label for="event-time">Uhrzeit</label><input id="event-time" name="event_time" type="time" /></div></div>
       <label class="checkline"><input id="event-allday" name="all_day" type="checkbox" /><span>Ganztägig</span></label>
+      <div class="recurrence-settings">
+        <label for="event-repeat">Wiederholung</label>
+        <select id="event-repeat" name="repeat_frequency">
+          <option value="none">Einmalig (keine Wiederholung)</option>
+          <option value="daily">Täglich</option>
+          <option value="weekly">Wöchentlich</option>
+          <option value="monthly">Monatlich</option>
+          <option value="yearly">Jährlich</option>
+        </select>
+        <div id="event-repeat-until-wrap" class="recurrence-end" hidden>
+          <label for="event-repeat-until">Wiederholen bis (optional)</label>
+          <input id="event-repeat-until" name="repeat_until" type="date" />
+          <small>Leer lassen: ohne Enddatum</small>
+        </div>
+        <p id="event-series-notice" class="series-notice" hidden>Du bearbeitest die gesamte Terminserie. Änderungen gelten für alle Wiederholungen.</p>
+      </div>
       <label for="event-details">Details (optional)</label><textarea id="event-details" name="details" rows="3" maxlength="1000" placeholder="Ort, weitere Informationen ..."></textarea>
       <p id="event-author-label" class="author-label">Wird eingetragen von: Profil</p>
       <p class="form-error" id="event-error" role="alert"></p>
@@ -96,6 +112,6 @@
 
   <script src="supabase-config.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-  <script defer src="app.js?v=5"></script>
+  <script defer src="app.js?v=6"></script>
 </body>
 </html>
