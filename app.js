@@ -7,7 +7,7 @@ const cloud=Boolean(cfg.supabaseUrl&&cfg.supabasePublishableKey);
 const now=new Date();
 const monthNames=["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
 const dayNames=["So.","Mo.","Di.","Mi.","Do.","Fr.","Sa."];
-const st={page:"calendar",month:new Date(now.getFullYear(),now.getMonth(),1),events:[],notes:[],members:[],profiles:[],activeProfileId:null,familyId:null,user:null,client:null,reloading:false,channel:null,busy:false};
+const st={page:"calendar",month:new Date(now.getFullYear(),now.getMonth(),1),events:[],notes:[],members:[],profiles:[],activeProfileId:null,avatarUrls:{},avatarCache:{},avatarTargetId:null,avatarBusy:false,familyId:null,user:null,client:null,reloading:false,channel:null,busy:false};
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const iso=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-");
 const dateFor=s=>{const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)};
@@ -23,6 +23,29 @@ function saveLocal(){if(!cloud){localStorage.setItem("family-hub.events.v1",JSON
 const profileStorageKey=()=> "family-hub.selected-profile."+st.familyId;
 const activeProfile=()=>st.profiles.find(p=>p.id===st.activeProfileId)||null;
 const profileName=id=>st.profiles.find(p=>p.id===id)?.display_name||"";
+const photoBucket="family-profile-photos";
+function profileAvatar(profile,sizeClass=""){
+ const name=profile?.display_name||"?";
+ const url=profile?.id?st.avatarUrls[profile.id]:null;
+ return '<span class="avatar profile-avatar '+esc(sizeClass)+'" aria-label="Profilbild '+esc(name)+'"><span class="avatar-initial">'+esc(name.slice(0,1).toUpperCase())+'</span>'+
+ (url?'<img class="avatar-photo" src="'+esc(url)+'" alt="" loading="lazy" referrerpolicy="no-referrer">':'')+'</span>';
+}
+async function refreshAvatarUrls(){
+ const urls={};
+ const now=Date.now();
+ await Promise.all(st.profiles.map(async p=>{
+   if(!p.avatar_path)return;
+   const c=st.avatarCache[p.avatar_path];
+   if(c?.expires>now){urls[p.id]=c.url;return;}
+   try{
+     const {data,error}=await st.client.storage.from(photoBucket).createSignedUrl(p.avatar_path,3600*8);
+     if(error)throw error;
+     if(data?.signedUrl){urls[p.id]=data.signedUrl;st.avatarCache[p.avatar_path]={url:data.signedUrl,expires:Date.now()+3600*7*1000};}
+   }catch(e){console.warn("Profilbild nicht geladen",e);}
+ }));
+ st.avatarUrls=urls;
+}
+
 function chooseProfile(id){
  if(!st.profiles.some(p=>p.id===id))return;
  st.activeProfileId=id;
@@ -34,7 +57,7 @@ function showProfileChooser(){
  if(!cloud||!st.familyId)return;
  $("profile-options").innerHTML=st.profiles.map(p=>
  '<button type="button" class="profile-choice'+(p.id===st.activeProfileId?' profile-selected':'')+'" data-profile-choice="'+esc(p.id)+'">'+
- '<span class="avatar">'+esc(p.display_name.slice(0,1).toUpperCase())+'</span><span>'+esc(p.display_name)+'</span></button>').join("");
+ profileAvatar(p)+'<span>'+esc(p.display_name)+'</span></button>').join("");
  if(!$("profile-dialog").open)$("profile-dialog").showModal();
 }
 function ensureSelectedProfile(){
@@ -91,9 +114,10 @@ const r=await Promise.all([
 st.client.from("events").select("id,title,event_date,event_time,all_day,details,created_by,profile_id").eq("family_id",st.familyId),
 st.client.from("notes").select("id,body,done,created_by,profile_id").eq("family_id",st.familyId),
 st.client.from("family_members").select("user_id,display_name").eq("family_id",st.familyId),
-st.client.from("family_profiles").select("id,slot_number,display_name").eq("family_id",st.familyId).order("slot_number")]);
+st.client.from("family_profiles").select("id,slot_number,display_name,avatar_path").eq("family_id",st.familyId).order("slot_number")]);
 for(const x of r)if(x.error)throw x.error;
 st.events=r[0].data||[];st.notes=r[1].data||[];st.members=r[2].data||[];st.profiles=r[3].data||[];
+await refreshAvatarUrls();
 hideLogin();if(!quiet)status("Gemeinsamer Kalender verbunden – alle Familienmitglieder sehen die Änderungen.","demo");
 if(!st.channel){st.channel=st.client.channel("family-hub-"+st.familyId).on("postgres_changes",{event:"*",schema:"public",table:"events",filter:"family_id=eq."+st.familyId},()=>reload(true)).on("postgres_changes",{event:"*",schema:"public",table:"notes",filter:"family_id=eq."+st.familyId},()=>reload(true)).on("postgres_changes",{event:"*",schema:"public",table:"family_profiles",filter:"family_id=eq."+st.familyId},()=>reload(true)).subscribe()}
 render();ensureSelectedProfile();
