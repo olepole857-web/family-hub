@@ -11,7 +11,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
   <link rel="apple-touch-icon" href="icons/icon.svg" />
-  <link rel="stylesheet" href="styles.css?v=6" />
+  <link rel="stylesheet" href="styles.css?v=7" />
   <title>FAMILY HUB · Familienkalender</title>
 </head>
 <body>
@@ -45,6 +45,11 @@
       <label for="event-title">Termin</label><input id="event-title" name="title" maxlength="120" required placeholder="z. B. Familienessen" />
       <div class="form-row"><div><label for="event-date">Datum</label><input id="event-date" name="event_date" type="date" required /></div><div><label for="event-time">Uhrzeit</label><input id="event-time" name="event_time" type="time" /></div></div>
       <label class="checkline"><input id="event-allday" name="all_day" type="checkbox" /><span>Ganztägig</span></label>
+      <div id="event-date-range-wrap" class="date-range-settings">
+        <label for="event-end-date">Enddatum (optional – für mehrtägige Termine)</label>
+        <input id="event-end-date" name="event_end_date" type="date" />
+        <small>Beispiel: 01.07. bis 14.07. · Wird an jedem Tag angezeigt, einschließlich Enddatum.</small>
+      </div>
       <div class="recurrence-settings">
         <label for="event-repeat">Wiederholung</label>
         <select id="event-repeat" name="repeat_frequency">
@@ -112,6 +117,6 @@
 
   <script src="supabase-config.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-  <script defer src="app.js?v=6"></script>
+  <script defer src="app.js?v=7"></script>
 </body>
 </html>
