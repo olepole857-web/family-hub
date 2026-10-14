@@ -256,11 +256,22 @@ $("menu-switch-profile").addEventListener("click",()=>{$("menu-dialog").close();
 $("menu-help").addEventListener("click",()=>{$("menu-dialog").close();go("help")});
 $("logout-button").addEventListener("click",async()=>{$("menu-dialog").close();if(st.client)await st.client.auth.signOut()});
 document.querySelectorAll("[data-close-dialog]").forEach(b=>b.addEventListener("click",()=>$(b.dataset.closeDialog).close()));
-$("main-content").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;if(b.dataset.eventId)openEvent(undefined,b.dataset.eventId);else if(b.dataset.addDate)openEvent(b.dataset.addDate);else if(b.dataset.monthShift)changeMonth(Number(b.dataset.monthShift));else if(b.dataset.go)go(b.dataset.go);else if(b.dataset.noteId)openNote(b.dataset.noteId);else if(b.dataset.switchProfile)showProfileChooser();else if(b.dataset.renameProfile)renameProfile(b.dataset.renameProfile);else if(b.id==="no-member-logout")st.client?.auth.signOut()});
+$("main-content").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;if(b.dataset.eventId)openEvent(undefined,b.dataset.eventId);else if(b.dataset.addDate)openEvent(b.dataset.addDate);else if(b.dataset.monthShift)changeMonth(Number(b.dataset.monthShift));else if(b.dataset.go)go(b.dataset.go);else if(b.dataset.noteId)openNote(b.dataset.noteId);else if(b.dataset.switchProfile)showProfileChooser();else if(b.dataset.uploadAvatar)beginAvatarUpload(b.dataset.uploadAvatar);else if(b.dataset.removeAvatar)removeAvatar(b.dataset.removeAvatar);else if(b.dataset.renameProfile)renameProfile(b.dataset.renameProfile);else if(b.id==="no-member-logout")st.client?.auth.signOut()});
 $("main-content").addEventListener("change",async e=>{const id=e.target.dataset.noteCheck,n=st.notes.find(x=>x.id===id);if(!n)return;try{await saveNote({...n,done:e.target.checked})}catch(x){status("Notiz konnte nicht geändert werden: "+x.message,"error");render()}});
 $("delete-event").addEventListener("click",async()=>{const id=$("event-form").elements.id.value;if(!id||!confirm("Termin löschen?"))return;busy(true);try{await remove("events",id);$("event-dialog").close()}catch(e){$("event-error").textContent=e.message}finally{busy(false)}});
 $("delete-note").addEventListener("click",async()=>{const id=$("note-form").elements.id.value;if(!id||!confirm("Notiz löschen?"))return;busy(true);try{await remove("notes",id);$("note-dialog").close()}catch(e){$("note-error").textContent=e.message}finally{busy(false)}});
 $("login-form").addEventListener("submit",async e=>{e.preventDefault();const b=e.target.querySelector('button[type="submit"]');b.disabled=true;$("login-error").textContent="";try{const {data,error}=await st.client.auth.signInWithPassword({email:$("login-email").value.trim(),password:$("login-password").value});if(error)throw error;st.user=data.user;await reload();if(st.familyId)hideLogin()}catch(x){$("login-error").textContent=x.message||"Login fehlgeschlagen"}finally{b.disabled=false}});
+$("avatar-file-input").addEventListener("change",e=>{
+ const file=e.target.files?.[0],profileId=st.avatarTargetId;
+ if(file&&profileId)uploadAvatar(profileId,file);
+ else st.avatarTargetId=null;
+});
+$("main-content").addEventListener("error",e=>{
+ if(e.target?.classList?.contains("avatar-photo"))e.target.hidden=true;
+},true);
+$("profile-options").addEventListener("error",e=>{
+ if(e.target?.classList?.contains("avatar-photo"))e.target.hidden=true;
+},true);
 $("profile-options").addEventListener("click",e=>{const b=e.target.closest("[data-profile-choice]");if(b)chooseProfile(b.dataset.profileChoice)});
 $("profile-dialog").addEventListener("cancel",e=>{if(!activeProfile())e.preventDefault()});
 for(const d of document.querySelectorAll("dialog"))d.addEventListener("click",e=>{if(e.target===d&&d.id!=="login-dialog"&&d.id!=="profile-dialog")d.close()});
