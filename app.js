@@ -234,7 +234,45 @@ function eventButton(e){
  '</span></button>';
 }
 function week(d){const x=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));x.setUTCDate(x.getUTCDate()+4-(x.getUTCDay()||7));const y=x.getUTCFullYear();return [Math.ceil(((x-new Date(Date.UTC(y,0,1)))/86400000+1)/7),y]}
-function calendar(){const y=st.month.getFullYear(),m=st.month.getMonth(),last=new Date(y,m+1,0).getDate();let h='<div class="month-navigation"><button class="text-button" data-month-shift="-1">← Vorheriger Monat</button><button class="text-button" data-month-shift="1">Nächster Monat →</button></div>';const events=occurrencesBetween(iso(new Date(y,m,1)),iso(new Date(y,m,last)));for(let d=1;d<=last;d++){const date=new Date(y,m,d),key=iso(date);if(d===1||date.getDay()===1){const [w,yr]=week(date);h+='<div class="week-title"><h2>KW '+w+', '+yr+'</h2><small>Termine im Überblick</small></div>'}h+='<div class="calendar-row"><div class="date-label '+(key===iso(now)?"today":"")+'"><span class="weekday">'+dayNames[date.getDay()]+'</span><span class="day-number">'+d+'</span></div><div class="date-card">';const dayEvents=events.filter(e=>e.event_date===key);h+=dayEvents.map(eventButton).join("");h+='<button type="button" class="add-day'+(dayEvents.length?' has-events':'')+'" data-add-date="'+key+'" aria-label="Weiteren Termin am '+d+'. '+monthNames[m]+' hinzufügen">'+(dayEvents.length?'+ Weiteren Termin hinzufügen':'+ Termin hinzufügen')+'</button>';h+='</div></div>'}return h}
+
+/* Gesetzliche Feiertage NRW (§ 2 Feiertagsgesetz NW).
+   Dynamically calculated per year; never written to Supabase, so no duplicate entries. */
+const holidayCache=new Map();
+function easterSunday(year){
+  // Gregorian Easter (Meeus/Jones/Butcher), valid for the app's year picker 2000–2100.
+  const a=year%19,b=Math.floor(year/100),c=year%100;
+  const d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25);
+  const g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30;
+  const i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k+7)%7;
+  const m=Math.floor((a+11*h+22*l)/451);
+  const n=h+l-7*m+114;
+  return new Date(year,Math.floor(n/31)-1,(n%31)+1);
+}
+function nrwHolidays(year){
+  if(holidayCache.has(year))return holidayCache.get(year);
+  const result=new Map(),easter=easterSunday(year);
+  const fixed=(month,day,label)=>result.set(iso(new Date(year,month-1,day)),label);
+  const movable=(offset,label)=>result.set(addDay(easter,offset),label);
+  fixed(1,1,"Neujahr");
+  movable(-2,"Karfreitag");
+  movable(1,"Ostermontag");
+  fixed(5,1,"Tag der Arbeit");
+  movable(39,"Christi Himmelfahrt");
+  movable(50,"Pfingstmontag");
+  movable(60,"Fronleichnam");
+  fixed(10,3,"Tag der Deutschen Einheit");
+  fixed(11,1,"Allerheiligen");
+  fixed(12,25,"1. Weihnachtsfeiertag");
+  fixed(12,26,"2. Weihnachtsfeiertag");
+  holidayCache.set(year,result);
+  return result;
+}
+function holidayLabel(title){
+  return '<div class="nrw-holiday" role="note" aria-label="Gesetzlicher Feiertag in Nordrhein-Westfalen: '+esc(title)+'">'+
+   '<span class="nrw-holiday-name">'+esc(title)+'</span>'+
+   '<span class="nrw-holiday-caption">Gesetzlicher Feiertag · NRW</span></div>';
+}
+function calendar(){const y=st.month.getFullYear(),m=st.month.getMonth(),last=new Date(y,m+1,0).getDate();let h='<div class="month-navigation"><button class="text-button" data-month-shift="-1">← Vorheriger Monat</button><button class="text-button" data-month-shift="1">Nächster Monat →</button></div>';const events=occurrencesBetween(iso(new Date(y,m,1)),iso(new Date(y,m,last))),holidays=nrwHolidays(y);for(let d=1;d<=last;d++){const date=new Date(y,m,d),key=iso(date);if(d===1||date.getDay()===1){const [w,yr]=week(date);h+='<div class="week-title"><h2>KW '+w+', '+yr+'</h2><small>Termine im Überblick</small></div>'}h+='<div class="calendar-row"><div class="date-label '+(key===iso(now)?"today":"")+'"><span class="weekday">'+dayNames[date.getDay()]+'</span><span class="day-number">'+d+'</span></div><div class="date-card">';const dayEvents=events.filter(e=>e.event_date===key),holiday=holidays.get(key);if(holiday)h+=holidayLabel(holiday);h+=dayEvents.map(eventButton).join("");h+='<button type="button" class="add-day'+(dayEvents.length?' has-events':'')+'" data-add-date="'+key+'" aria-label="Weiteren Termin am '+d+'. '+monthNames[m]+' hinzufügen">'+(dayEvents.length?'+ Weiteren Termin hinzufügen':'+ Termin hinzufügen')+'</button>';h+='</div></div>'}return h}
 function home(){const n=occurrencesBetween(iso(now),addDay(now,400)).slice(0,8);return '<div class="today-feature"><div><span class="pill">FAMILY HUB</span><h1 class="page-title" style="margin-top:13px">Hallo, Familie!</h1><p>'+now.toLocaleDateString("de-DE",{weekday:"long",day:"numeric",month:"long"})+'</p></div><button class="outlined-button" data-go="calendar">Kalender →</button></div><div class="card-grid"><div class="mini-stat"><b>'+st.events.filter(e=>occursOn(e,iso(now))).length+'</b><span>Termine heute</span></div><div class="mini-stat"><b>'+(cloud?st.profiles.length:st.members.length)+'</b><span>Familienprofile</span></div></div><div class="section-heading"><h2>Nächste Termine</h2></div>'+(n.length?n.map(e=>'<div class="panel"><small class="muted">'+shortDate(e.event_date)+'</small>'+eventButton(e)+'</div>').join(""):'<div class="panel">Keine Termine geplant</div>')}
 function family(){
  if(!cloud)return '<h1 class="page-title">Unsere Familie</h1><p>Familienprofile werden im gemeinsamen Kalender angezeigt.</p>';
