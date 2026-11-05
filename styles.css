@@ -54,3 +54,10 @@
 .date-range-settings label{font-weight:650}
 .date-range-settings small{color:#687c73;font-size:12px;line-height:1.5}
 .multi-day-marker{background:#e7f2ec;color:#356e50;margin-left:3px}
+
+
+/* Gesetzliche Feiertage NRW: bewusst dunkel, schwarz und fett. */
+.nrw-holiday{display:flex;flex-direction:column;gap:3px;background:#eef0f3;border:2px solid #1c1c1c;border-left:6px solid #111;border-radius:12px;padding:11px 13px;margin:4px 0 8px;color:#111;box-shadow:0 2px 5px #0000000a}
+.nrw-holiday-name{color:#000;font-weight:850;font-size:16px;line-height:1.25;overflow-wrap:anywhere}
+.nrw-holiday-caption{color:#232323;font-size:11px;font-weight:750;letter-spacing:.01em}
+@media(max-width:480px){.nrw-holiday{padding:10px 9px}.nrw-holiday-name{font-size:15px}}
