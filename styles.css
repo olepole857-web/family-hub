@@ -61,3 +61,11 @@
 .nrw-holiday-name{color:#000;font-weight:850;font-size:16px;line-height:1.25;overflow-wrap:anywhere}
 .nrw-holiday-caption{color:#232323;font-size:11px;font-weight:750;letter-spacing:.01em}
 @media(max-width:480px){.nrw-holiday{padding:10px 9px}.nrw-holiday-name{font-size:15px}}
+
+
+/* Continuous month-to-month calendar stream. */
+.topbar{position:sticky;top:0;z-index:20}
+.calendar-month{padding-top:5px}
+.calendar-month+.calendar-month{border-top:2px solid #d7dbe7;margin-top:24px;padding-top:22px}
+.calendar-month-title{font-size:clamp(23px,5.5vw,30px);font-weight:820;letter-spacing:-.025em;color:#25283a;margin:5px 3px 13px}
+.calendar-load-more{height:1px;pointer-events:none}
