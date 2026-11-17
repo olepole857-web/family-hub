@@ -7,7 +7,7 @@ const cloud=Boolean(cfg.supabaseUrl&&cfg.supabasePublishableKey);
 const now=new Date();
 const monthNames=["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
 const dayNames=["So.","Mo.","Di.","Mi.","Do.","Fr.","Sa."];
-const st={page:"calendar",month:new Date(now.getFullYear(),now.getMonth(),1),events:[],notes:[],members:[],profiles:[],activeProfileId:null,avatarUrls:{},avatarCache:{},avatarTargetId:null,avatarBusy:false,familyId:null,user:null,client:null,reloading:false,channel:null,busy:false,calendarLastMonth:null};
+const st={page:"calendar",month:new Date(now.getFullYear(),now.getMonth(),1),events:[],notes:[],members:[],profiles:[],activeProfileId:null,avatarUrls:{},avatarCache:{},avatarTargetId:null,avatarBusy:false,familyId:null,user:null,client:null,reloading:false,channel:null,busy:false,calendarStartMonth:null,calendarLastMonth:null};
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const iso=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-");
 const dateFor=s=>{const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)};
@@ -294,11 +294,14 @@ function calendarMonthHTML(month){
  return h+'</section>';
 }
 function calendar(){
- const start=new Date(st.month.getFullYear(),st.month.getMonth(),1);
- const next=new Date(start.getFullYear(),start.getMonth()+1,1);
- st.calendarLastMonth=next;
+ const start=st.calendarStartMonth||new Date(st.month.getFullYear(),st.month.getMonth(),1);
+ const last=st.calendarLastMonth&&st.calendarLastMonth>=start?st.calendarLastMonth:new Date(start.getFullYear(),start.getMonth()+1,1);
+ st.calendarStartMonth=start;
+ st.calendarLastMonth=last;
+ let months="";
+ for(let cursor=new Date(start);cursor<=last;cursor.setMonth(cursor.getMonth()+1))months+=calendarMonthHTML(cursor);
  return '<div class="month-navigation"><button class="text-button" data-month-shift="-1">← Vorheriger Monat</button><button class="text-button" data-month-shift="1">Nächster Monat →</button></div>'+
- '<div id="calendar-months">'+calendarMonthHTML(start)+calendarMonthHTML(next)+'</div>'+
+ '<div id="calendar-months">'+months+'</div>'+
  '<div id="calendar-load-more" class="calendar-load-more" aria-hidden="true"></div>';
 }
 function appendNextCalendarMonth(){
@@ -369,6 +372,7 @@ function render(resetCalendar=false){
   $("main-content").innerHTML='<div class="panel"><h1>Noch nicht freigeschaltet</h1><p>Dieses Konto muss erst der Familie zugeordnet werden.</p><button class="outlined-button" id="no-member-logout">Abmelden</button>';
   return;
  }
+ if(resetCalendar){st.calendarStartMonth=null;st.calendarLastMonth=null;}
  const views={calendar,home,family,notes,help};
  $("main-content").innerHTML=(views[st.page]||calendar)();
  $("add-button").hidden=st.page==="family"||st.page==="help";
