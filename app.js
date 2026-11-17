@@ -7,7 +7,7 @@ const cloud=Boolean(cfg.supabaseUrl&&cfg.supabasePublishableKey);
 const now=new Date();
 const monthNames=["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
 const dayNames=["So.","Mo.","Di.","Mi.","Do.","Fr.","Sa."];
-const st={page:"calendar",month:new Date(now.getFullYear(),now.getMonth(),1),events:[],notes:[],members:[],profiles:[],activeProfileId:null,avatarUrls:{},avatarCache:{},avatarTargetId:null,avatarBusy:false,familyId:null,user:null,client:null,reloading:false,channel:null,busy:false};
+const st={page:"calendar",month:new Date(now.getFullYear(),now.getMonth(),1),events:[],notes:[],members:[],profiles:[],activeProfileId:null,avatarUrls:{},avatarCache:{},avatarTargetId:null,avatarBusy:false,familyId:null,user:null,client:null,reloading:false,channel:null,busy:false,calendarLastMonth:null};
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const iso=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-");
 const dateFor=s=>{const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)};
@@ -272,7 +272,61 @@ function holidayLabel(title){
    '<span class="nrw-holiday-name">'+esc(title)+'</span>'+
    '<span class="nrw-holiday-caption">Gesetzlicher Feiertag · NRW</span></div>';
 }
-function calendar(){const y=st.month.getFullYear(),m=st.month.getMonth(),last=new Date(y,m+1,0).getDate();let h='<div class="month-navigation"><button class="text-button" data-month-shift="-1">← Vorheriger Monat</button><button class="text-button" data-month-shift="1">Nächster Monat →</button></div>';const events=occurrencesBetween(iso(new Date(y,m,1)),iso(new Date(y,m,last))),holidays=nrwHolidays(y);for(let d=1;d<=last;d++){const date=new Date(y,m,d),key=iso(date);if(d===1||date.getDay()===1){const [w,yr]=week(date);h+='<div class="week-title"><h2>KW '+w+', '+yr+'</h2><small>Termine im Überblick</small></div>'}h+='<div class="calendar-row"><div class="date-label '+(key===iso(now)?"today":"")+'"><span class="weekday">'+dayNames[date.getDay()]+'</span><span class="day-number">'+d+'</span></div><div class="date-card">';const dayEvents=events.filter(e=>e.event_date===key),holiday=holidays.get(key);if(holiday)h+=holidayLabel(holiday);h+=dayEvents.map(eventButton).join("");h+='<button type="button" class="add-day'+(dayEvents.length?' has-events':'')+'" data-add-date="'+key+'" aria-label="Weiteren Termin am '+d+'. '+monthNames[m]+' hinzufügen">'+(dayEvents.length?'+ Weiteren Termin hinzufügen':'+ Termin hinzufügen')+'</button>';h+='</div></div>'}return h}
+function calendarMonthHTML(month){
+ const y=month.getFullYear(),m=month.getMonth(),last=new Date(y,m+1,0).getDate();
+ const monthKey=y+"-"+String(m+1).padStart(2,"0");
+ const events=occurrencesBetween(iso(new Date(y,m,1)),iso(new Date(y,m,last))),holidays=nrwHolidays(y);
+ let h='<section class="calendar-month" data-month="'+monthKey+'" aria-label="'+monthNames[m]+' '+y+'">';
+ h+='<h2 class="calendar-month-title">'+monthNames[m]+' '+y+'</h2>';
+ for(let d=1;d<=last;d++){
+  const date=new Date(y,m,d),key=iso(date);
+  if(d===1||date.getDay()===1){
+   const [w,yr]=week(date);
+   h+='<div class="week-title"><h2>KW '+w+', '+yr+'</h2><small>Termine im Überblick</small></div>';
+  }
+  h+='<div class="calendar-row"><div class="date-label '+(key===iso(now)?"today":"")+'"><span class="weekday">'+dayNames[date.getDay()]+'</span><span class="day-number">'+d+'</span></div><div class="date-card">';
+  const dayEvents=events.filter(e=>e.event_date===key),holiday=holidays.get(key);
+  if(holiday)h+=holidayLabel(holiday);
+  h+=dayEvents.map(eventButton).join("");
+  h+='<button type="button" class="add-day'+(dayEvents.length?' has-events':'')+'" data-add-date="'+key+'" aria-label="Weiteren Termin am '+d+'. '+monthNames[m]+' hinzufügen">'+(dayEvents.length?'+ Weiteren Termin hinzufügen':'+ Termin hinzufügen')+'</button>';
+  h+='</div></div>';
+ }
+ return h+'</section>';
+}
+function calendar(){
+ const start=new Date(st.month.getFullYear(),st.month.getMonth(),1);
+ const next=new Date(start.getFullYear(),start.getMonth()+1,1);
+ st.calendarLastMonth=next;
+ return '<div class="month-navigation"><button class="text-button" data-month-shift="-1">← Vorheriger Monat</button><button class="text-button" data-month-shift="1">Nächster Monat →</button></div>'+
+ '<div id="calendar-months">'+calendarMonthHTML(start)+calendarMonthHTML(next)+'</div>'+
+ '<div id="calendar-load-more" class="calendar-load-more" aria-hidden="true"></div>';
+}
+function appendNextCalendarMonth(){
+ const container=$("calendar-months");
+ if(st.page!=="calendar"||!container||!st.calendarLastMonth)return;
+ const next=new Date(st.calendarLastMonth.getFullYear(),st.calendarLastMonth.getMonth()+1,1);
+ container.insertAdjacentHTML("beforeend",calendarMonthHTML(next));
+ st.calendarLastMonth=next;
+}
+function syncCalendarScroll(){
+ if(st.page!=="calendar")return;
+ const container=$("calendar-months");
+ if(!container)return;
+ const months=container.querySelectorAll(".calendar-month");
+ const threshold=Math.min(window.innerHeight*0.35,240);
+ let active=months[0];
+ for(const month of months){
+  if(month.getBoundingClientRect().top<=threshold)active=month;
+  else break;
+ }
+ if(active){
+  const [year,month]=active.dataset.month.split("-").map(Number);
+  st.month=new Date(year,month-1,1);
+  $("month-title").textContent=monthNames[month-1]+" "+year;
+ }
+ const loader=$("calendar-load-more");
+ if(loader&&loader.getBoundingClientRect().top<window.innerHeight+1000)appendNextCalendarMonth();
+}
 function home(){const n=occurrencesBetween(iso(now),addDay(now,400)).slice(0,8);return '<div class="today-feature"><div><span class="pill">FAMILY HUB</span><h1 class="page-title" style="margin-top:13px">Hallo, Familie!</h1><p>'+now.toLocaleDateString("de-DE",{weekday:"long",day:"numeric",month:"long"})+'</p></div><button class="outlined-button" data-go="calendar">Kalender →</button></div><div class="card-grid"><div class="mini-stat"><b>'+st.events.filter(e=>occursOn(e,iso(now))).length+'</b><span>Termine heute</span></div><div class="mini-stat"><b>'+(cloud?st.profiles.length:st.members.length)+'</b><span>Familienprofile</span></div></div><div class="section-heading"><h2>Nächste Termine</h2></div>'+(n.length?n.map(e=>'<div class="panel"><small class="muted">'+shortDate(e.event_date)+'</small>'+eventButton(e)+'</div>').join(""):'<div class="panel">Keine Termine geplant</div>')}
 function family(){
  if(!cloud)return '<h1 class="page-title">Unsere Familie</h1><p>Familienprofile werden im gemeinsamen Kalender angezeigt.</p>';
@@ -298,8 +352,43 @@ function notes(){
  (st.notes.length?st.notes.map(n=>'<div class="note-row"><input type="checkbox" data-note-check="'+esc(n.id)+'" '+(n.done?"checked":"")+' aria-label="Erledigt"><button class="note-button '+(n.done?"done":"")+'" data-note-id="'+esc(n.id)+'">'+esc(n.body)+(profileName(n.profile_id)?'<span class="note-author-with-avatar">'+profileAvatar(st.profiles.find(p=>p.id===n.profile_id),"author-avatar")+'<span class="note-author">Eingetragen von '+esc(profileName(n.profile_id))+'</span></span>':'')+'</button><button class="note-more" data-note-id="'+esc(n.id)+'" aria-label="Notiz bearbeiten">✎</button></div>').join(""):'<div class="panel empty-state"><strong>Keine Notizen</strong>Tippe auf +.</div>');
 }
 function help(){return '<h1 class="page-title">Hilfe & Einrichtung</h1><div class="panel guide"><h2>So funktioniert FAMILY HUB</h2><p>Tippe auf eine leere Tageskachel, um einen Termin einzutragen. Tippe auf einen Termin, um ihn zu bearbeiten oder zu löschen. Mit + kannst du jederzeit etwas hinzufügen.</p><p>Die Daten bleiben im Demo-Modus nur auf dem jeweiligen Gerät. Für den gemeinsamen Kalender meldet ihr euch mit dem Familienkonto an und wählt auf jedem Gerät einmal ein Profil aus. Die Namen können unter Familie geändert werden.</p><p>Auf dem iPhone: Safari → Teilen → Zum Home-Bildschirm. Auf Android: Browser-Menü → App installieren.</p></div>'}
-function render(){if(cloud&&!st.user){showLogin();return}$("month-title").textContent=monthNames[st.month.getMonth()]+" "+st.month.getFullYear();if(cloud&&!st.familyId){$("add-button").hidden=true;$("main-content").innerHTML='<div class="panel"><h1>Noch nicht freigeschaltet</h1><p>Dieses Konto muss erst der Familie zugeordnet werden.</p><button class="outlined-button" id="no-member-logout">Abmelden</button></div>';return}const views={calendar,home,family,notes,help};$("main-content").innerHTML=(views[st.page]||calendar)();$("add-button").hidden=st.page==="family"||st.page==="help";document.querySelectorAll(".nav-item").forEach(b=>{b.classList.toggle("selected",b.dataset.page===st.page);if(b.dataset.page===st.page)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});$("account-info").textContent=cloud?"Familienkonto · Profil: "+(activeProfile()?.display_name||"Nicht gewählt"):"Demo-Modus auf diesem Gerät";$("menu-switch-profile").hidden=!cloud;$("logout-button").hidden=!cloud}
-function go(page){st.page=page;render();window.scrollTo({top:0,behavior:"instant"})}
+function render(resetCalendar=false){
+ const threshold=Math.min(window.innerHeight*0.35,240);
+ const existing=!resetCalendar&&st.page==="calendar"
+  ? [...document.querySelectorAll("#calendar-months .calendar-month")]:[];
+ const anchor=existing.find(m=>m.getBoundingClientRect().bottom>threshold);
+ const saved=anchor?{key:anchor.dataset.month,top:anchor.getBoundingClientRect().top}:null;
+ if(saved){
+  const [year,month]=saved.key.split("-").map(Number);
+  st.month=new Date(year,month-1,1);
+ }
+ if(cloud&&!st.user){showLogin();return}
+ $("month-title").textContent=monthNames[st.month.getMonth()]+" "+st.month.getFullYear();
+ if(cloud&&!st.familyId){
+  $("add-button").hidden=true;
+  $("main-content").innerHTML='<div class="panel"><h1>Noch nicht freigeschaltet</h1><p>Dieses Konto muss erst der Familie zugeordnet werden.</p><button class="outlined-button" id="no-member-logout">Abmelden</button>';
+  return;
+ }
+ const views={calendar,home,family,notes,help};
+ $("main-content").innerHTML=(views[st.page]||calendar)();
+ $("add-button").hidden=st.page==="family"||st.page==="help";
+ document.querySelectorAll(".nav-item").forEach(b=>{
+  b.classList.toggle("selected",b.dataset.page===st.page);
+  if(b.dataset.page===st.page)b.setAttribute("aria-current","page");
+  else b.removeAttribute("aria-current");
+ });
+ $("account-info").textContent=cloud?"Familienkonto · Profil: "+(activeProfile()?.display_name||"Nicht gewählt"):"Demo-Modus auf diesem Gerät";
+ $("menu-switch-profile").hidden=!cloud;
+ $("logout-button").hidden=!cloud;
+ if(st.page==="calendar"){
+  if(saved){
+   const target=[...document.querySelectorAll("#calendar-months .calendar-month")].find(m=>m.dataset.month===saved.key);
+   if(target)window.scrollBy(0,target.getBoundingClientRect().top-saved.top);
+  }
+  syncCalendarScroll();
+ }
+}
+function go(page){st.page=page;render(true);window.scrollTo({top:0,behavior:"instant"})}
 function changeMonth(n){st.month=new Date(st.month.getFullYear(),st.month.getMonth()+n,1);go("calendar")}
 function openEvent(date=iso(now),id){const e=id?st.events.find(x=>x.id===id):null,f=$("event-form");f.reset();f.elements.id.value=e?.id||"";f.elements.title.value=e?.title||"";f.elements.event_date.value=e?.event_date||date;f.elements.event_time.value=String(e?.event_time||"").slice(0,5);f.elements.all_day.checked=Boolean(e?.all_day);f.elements.event_time.disabled=Boolean(e?.all_day);f.elements.details.value=e?.details||"";f.elements.repeat_frequency.value=e?.repeat_frequency||"none";f.elements.repeat_until.value=e?.repeat_until||"";f.elements.event_end_date.value=e?.event_end_date||"";updateRecurrenceForm();$("event-series-notice").hidden=!(e&&((e.repeat_frequency||"none")!=="none"||(e.event_end_date&&e.event_end_date>e.event_date)));$("event-series-notice").textContent=e&&e.event_end_date&&e.event_end_date>e.event_date?"Du bearbeitest den gesamten Zeitraum. Änderungen gelten für alle Tage.":"Du bearbeitest die gesamte Terminserie. Änderungen gelten für alle Wiederholungen.";$("delete-event").hidden=!e;$("event-dialog-title").textContent=e?"Termin bearbeiten":"Termin hinzufügen";$("event-error").textContent="";$("event-author-label").textContent=e?"Eingetragen von: "+(profileName(e.profile_id)||"Bisher ohne Profil"):"Wird eingetragen von: "+(activeProfile()?.display_name||"Bitte Profil wählen");$("event-dialog").showModal()}
 function updateRecurrenceForm(){
@@ -353,6 +442,12 @@ $("profile-options").addEventListener("error",e=>{
 $("profile-options").addEventListener("click",e=>{const b=e.target.closest("[data-profile-choice]");if(b)chooseProfile(b.dataset.profileChoice)});
 $("profile-dialog").addEventListener("cancel",e=>{if(!activeProfile())e.preventDefault()});
 for(const d of document.querySelectorAll("dialog"))d.addEventListener("click",e=>{if(e.target===d&&d.id!=="login-dialog"&&d.id!=="profile-dialog")d.close()});
+let calendarScrollScheduled=false;
+window.addEventListener("scroll",()=>{
+ if(st.page!=="calendar"||calendarScrollScheduled)return;
+ calendarScrollScheduled=true;
+ requestAnimationFrame(()=>{calendarScrollScheduled=false;syncCalendarScroll();});
+},{passive:true});
 cloud?initCloud():demo();
 if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("./sw.js").catch(()=>{});
 })();
